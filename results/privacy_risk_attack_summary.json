@@ -1,0 +1,8 @@
+{
+  "attacked_paragraphs_analyzed": 68,
+  "avg_overall_risk_score_change": 0.7941176470588235,
+  "avg_sensitive_risk_score_change": -0.029411764705882353,
+  "paragraphs_risk_downgraded": 3,
+  "paragraphs_risk_upgraded": 9,
+  "paragraphs_with_fewer_privacy_entities_detected": 8
+}

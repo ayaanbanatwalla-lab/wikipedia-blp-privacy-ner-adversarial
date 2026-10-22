@@ -1,0 +1,53 @@
+{
+  "general_entities": {
+    "PERSON": "Named individual (including the BLP subject and other people mentioned)",
+    "ORG": "Organization, company, institution, team",
+    "LOC": "Location / geopolitical entity (country, city, region)",
+    "DATE": "Calendar date or date expression not specifically identified as date of birth"
+  },
+  "privacy_sensitive_entities": {
+    "EMAIL": "Email address",
+    "PHONE": "Telephone/fax number",
+    "ADDRESS": "Specific street/residential address (more precise than a general LOC)",
+    "FAMILY": "Named family relationship (spouse, children, parents, siblings)",
+    "HEALTH": "Reference to a health condition, disability, or medical status",
+    "RELIGION": "Named religion or religious affiliation",
+    "NATIONALITY": "Named nationality or citizenship",
+    "DATE_OF_BIRTH": "Date specifically identifying the subject's birth date",
+    "EDUCATION": "Named educational institution or qualification attended by the subject",
+    "EMPLOYMENT": "Named employer, occupation, or professional role",
+    "SOCIAL_MEDIA": "Social media handle or profile reference",
+    "IDENTIFIER": "Government or institutional identifier (e.g. ID numbers)",
+    "FINANCIAL": "Financial detail (salary, net worth, account information)",
+    "LEGAL": "Legal proceeding, criminal record, or court-related detail",
+    "OTHER_SENSITIVE": "Any other privacy-sensitive personal detail not covered above"
+  },
+  "gdpr_ccpa_risk_mapping": {
+    "EMAIL":         {"risk_level": "High",     "gdpr_relevance": "Personal data (direct identifier)", "ccpa_relevance": "Personal information"},
+    "PHONE":         {"risk_level": "High",     "gdpr_relevance": "Personal data (direct identifier)", "ccpa_relevance": "Personal information"},
+    "ADDRESS":       {"risk_level": "Critical", "gdpr_relevance": "Personal data (direct identifier, location data)", "ccpa_relevance": "Personal information (geolocation)"},
+    "IDENTIFIER":    {"risk_level": "Critical", "gdpr_relevance": "Personal data (unique identifier)", "ccpa_relevance": "Personal information"},
+    "FINANCIAL":     {"risk_level": "Critical", "gdpr_relevance": "Personal data (financial)", "ccpa_relevance": "Sensitive personal information"},
+    "HEALTH":        {"risk_level": "Critical", "gdpr_relevance": "Special category personal data (Art. 9)", "ccpa_relevance": "Sensitive personal information"},
+    "RELIGION":      {"risk_level": "Critical", "gdpr_relevance": "Special category personal data (Art. 9)", "ccpa_relevance": "Sensitive personal information"},
+    "LEGAL":         {"risk_level": "High",     "gdpr_relevance": "Personal data relating to offences (Art. 10)", "ccpa_relevance": "Sensitive personal information"},
+    "FAMILY":        {"risk_level": "Medium",   "gdpr_relevance": "Personal data (relational)", "ccpa_relevance": "Personal information"},
+    "DATE_OF_BIRTH": {"risk_level": "Medium",   "gdpr_relevance": "Personal data (identifying, combinable)", "ccpa_relevance": "Personal information"},
+    "NATIONALITY":   {"risk_level": "Medium",   "gdpr_relevance": "Personal data (may combine with special category in some contexts)", "ccpa_relevance": "Personal information"},
+    "SOCIAL_MEDIA":  {"risk_level": "Medium",   "gdpr_relevance": "Personal data (online identifier)", "ccpa_relevance": "Personal information (online identifier)"},
+    "EDUCATION":     {"risk_level": "Low",      "gdpr_relevance": "Personal data (biographical)", "ccpa_relevance": "Personal information"},
+    "EMPLOYMENT":    {"risk_level": "Low",      "gdpr_relevance": "Personal data (biographical)", "ccpa_relevance": "Personal information"},
+    "OTHER_SENSITIVE": {"risk_level": "Medium", "gdpr_relevance": "Context-dependent personal data", "ccpa_relevance": "Context-dependent personal information"},
+    "PERSON":        {"risk_level": "Low",      "gdpr_relevance": "Personal data (name, direct identifier, but expected/public in a biography)", "ccpa_relevance": "Personal information"},
+    "ORG":           {"risk_level": "Low",      "gdpr_relevance": "Generally not personal data on its own", "ccpa_relevance": "Not personal information on its own"},
+    "LOC":           {"risk_level": "Low",      "gdpr_relevance": "Generally not personal data unless combined with other identifiers", "ccpa_relevance": "Not personal information on its own"},
+    "DATE":          {"risk_level": "Low",      "gdpr_relevance": "Generally not personal data on its own", "ccpa_relevance": "Not personal information on its own"}
+  },
+  "risk_weight": {
+    "Critical": 4,
+    "High": 3,
+    "Medium": 2,
+    "Low": 1
+  },
+  "disclaimer": "This taxonomy and risk mapping is a research-oriented privacy-risk assessment framework, not a legal determination. It does not constitute legal advice and does not establish that any specific Wikipedia article violates GDPR, CCPA, or any other law. See paper Section 15 for full discussion."
+}

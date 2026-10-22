@@ -1,0 +1,17 @@
+{
+  "n_attacked_entities": 215,
+  "mcnemar_statistic": 0.0,
+  "mcnemar_pvalue": 0.0078125,
+  "mcnemar_discordant_detected_to_missed": 8,
+  "mcnemar_discordant_missed_to_detected": 0,
+  "attack_success_rate": 0.037209302325581395,
+  "attack_success_rate_95ci": [
+    0.011908834732423861,
+    0.06250976991873892
+  ],
+  "mean_confidence_drop": 0.44737301074336605,
+  "median_confidence_drop": 0.4545646607875824,
+  "sd_confidence_drop": 0.3902067178914004,
+  "mean_perturbation_rate": 0.04316717520323711,
+  "median_perturbation_rate": 0.03529411764705882
+}

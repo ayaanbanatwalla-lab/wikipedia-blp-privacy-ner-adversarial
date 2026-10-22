@@ -1,0 +1,19 @@
+{
+  "attack_sample_size": 75,
+  "attackable_examples": 215,
+  "attack_success_rate": 0.037209302325581395,
+  "avg_perturbation_rate": 0.0431671752032371,
+  "avg_semantic_similarity": 0.9927914347759513,
+  "avg_model_queries": 40.16744186046512,
+  "clean_precision_on_attacked_subset": 0.20752895752895753,
+  "clean_recall_on_attacked_subset": 0.26741293532338306,
+  "clean_f1_on_attacked_subset": 0.23369565217391305,
+  "adversarial_precision_on_attacked_subset": 0.06880733944954129,
+  "adversarial_recall_on_attacked_subset": 0.09328358208955224,
+  "adversarial_f1_on_attacked_subset": 0.0791974656810982,
+  "f1_drop": 0.15449818649281485,
+  "precision_drop": 0.13872161807941624,
+  "recall_drop": 0.17412935323383083,
+  "attacked_entity_instances": 215,
+  "attacked_paragraphs": 68
+}
