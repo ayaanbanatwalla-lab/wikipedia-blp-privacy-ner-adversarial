@@ -1,0 +1,52 @@
+control 1 0.0
+control 2 0.0
+control 3 0.0
+control 4 0.0
+control 5 0.0
+control 6 0.0
+control 7 0.0
+control 8 0.0
+control 9 0.0
+control 10 0.0
+control 11 0.0
+control 12 0.0
+control 13 0.0
+control 14 0.0
+control 15 0.0
+DONE 0.0 0.0 {'n': 0}
+/usr/local/lib/python3.13/dist-packages/opacus/privacy_engine.py:98: UserWarning: Secure RNG turned off. This is perfectly fine for experimentation as it allows for much faster training performance, but remember to turn it on and retrain one last time before production with ``secure_mode`` turned on.
+  warnings.warn(
+/home/claude/ia2/dp.py:31: UserWarning: Full backward hook is firing when gradients are computed with respect to module outputs since no inputs require gradients. See https://docs.pytorch.org/docs/main/generated/torch.nn.Module.html#torch.nn.Module.register_full_backward_hook for more details.
+  loss = per_sample_loss(logits, b["labels"]).mean(); loss.backward(); opt.step()
+eps_target=16.0 ep1 loss=2.479 valF1=0.0000 eps=4.64 24s
+eps_target=16.0 ep2 loss=1.453 valF1=0.0000 eps=6.06 49s
+eps_target=16.0 ep3 loss=1.310 valF1=0.0000 eps=7.18 71s
+eps_target=16.0 ep4 loss=1.295 valF1=0.0000 eps=8.16 96s
+eps_target=16.0 ep5 loss=1.175 valF1=0.0000 eps=9.07 119s
+eps_target=16.0 ep6 loss=1.125 valF1=0.0000 eps=9.89 143s
+eps_target=16.0 ep7 loss=1.122 valF1=0.0144 eps=10.68 165s
+eps_target=16.0 ep8 loss=1.130 valF1=0.0856 eps=11.42 185s
+eps_target=16.0 ep9 loss=1.088 valF1=0.0982 eps=12.16 206s
+eps_target=16.0 ep10 loss=1.040 valF1=0.0970 eps=12.83 228s
+eps_target=16.0 ep11 loss=1.068 valF1=0.1036 eps=13.49 249s
+eps_target=16.0 ep12 loss=1.060 valF1=0.1046 eps=14.16 272s
+eps_target=16.0 ep13 loss=1.056 valF1=0.1008 eps=14.81 293s
+eps_target=16.0 ep14 loss=1.059 valF1=0.1047 eps=15.41 315s
+eps_target=16.0 ep15 loss=1.028 valF1=0.1071 eps=16.00 338s
+DONE 16.0 0.09813084112149534 {'n': 42, 'flip_rate': 0.0, 'leak_rate_any_type': 0.07142857142857142, 'avg_conf_drop': 0.008445186784402245, 'avg_mods': 2.5238095238095237, 'avg_queries': 40.714285714285715}
+eps_target=4.0 ep1 loss=2.740 valF1=0.0000 eps=1.05 24s
+eps_target=4.0 ep2 loss=1.598 valF1=0.0000 eps=1.43 49s
+eps_target=4.0 ep3 loss=1.421 valF1=0.0000 eps=1.73 71s
+eps_target=4.0 ep4 loss=1.377 valF1=0.0000 eps=1.99 95s
+eps_target=4.0 ep5 loss=1.247 valF1=0.0000 eps=2.22 119s
+eps_target=4.0 ep6 loss=1.198 valF1=0.0000 eps=2.44 142s
+eps_target=4.0 ep7 loss=1.199 valF1=0.0000 eps=2.64 165s
+eps_target=4.0 ep8 loss=1.223 valF1=0.0000 eps=2.84 187s
+eps_target=4.0 ep9 loss=1.183 valF1=0.0000 eps=3.02 210s
+eps_target=4.0 ep10 loss=1.141 valF1=0.0000 eps=3.20 234s
+eps_target=4.0 ep11 loss=1.159 valF1=0.0116 eps=3.37 256s
+eps_target=4.0 ep12 loss=1.156 valF1=0.0289 eps=3.53 279s
+eps_target=4.0 ep13 loss=1.151 valF1=0.0347 eps=3.69 302s
+eps_target=4.0 ep14 loss=1.154 valF1=0.0492 eps=3.84 327s
+eps_target=4.0 ep15 loss=1.130 valF1=0.0492 eps=4.00 350s
+DONE 4.0 0.018518518518518517 {'n': 7, 'flip_rate': 0.0, 'leak_rate_any_type': 0.0, 'avg_conf_drop': 0.002700465066092355, 'avg_mods': 2.142857142857143, 'avg_queries': 44.42857142857143}

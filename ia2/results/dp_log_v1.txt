@@ -1,0 +1,36 @@
+/usr/local/lib/python3.13/dist-packages/opacus/privacy_engine.py:98: UserWarning: Secure RNG turned off. This is perfectly fine for experimentation as it allows for much faster training performance, but remember to turn it on and retrain one last time before production with ``secure_mode`` turned on.
+  warnings.warn(
+/home/claude/ia2/dp.py:31: UserWarning: Full backward hook is firing when gradients are computed with respect to module outputs since no inputs require gradients. See https://docs.pytorch.org/docs/main/generated/torch.nn.Module.html#torch.nn.Module.register_full_backward_hook for more details.
+  loss = per_sample_loss(logits, b["labels"]).mean(); loss.backward(); opt.step()
+eps_target=1.0 ep1 loss=3.451 valF1=0.0023 eps=0.23 28s
+eps_target=1.0 ep2 loss=2.905 valF1=0.0000 eps=0.33 52s
+eps_target=1.0 ep3 loss=2.482 valF1=0.0000 eps=0.41 77s
+eps_target=1.0 ep4 loss=2.078 valF1=0.0000 eps=0.48 110s
+eps_target=1.0 ep5 loss=1.807 valF1=0.0000 eps=0.54 188s
+eps_target=1.0 ep6 loss=1.626 valF1=0.0000 eps=0.60 352s
+eps_target=1.0 ep7 loss=1.588 valF1=0.0000 eps=0.65 506s
+eps_target=1.0 ep8 loss=1.518 valF1=0.0000 eps=0.70 596s
+eps_target=1.0 ep9 loss=1.528 valF1=0.0000 eps=0.75 671s
+eps_target=1.0 ep10 loss=1.482 valF1=0.0000 eps=0.79 694s
+eps_target=1.0 ep11 loss=1.446 valF1=0.0000 eps=0.83 717s
+eps_target=1.0 ep12 loss=1.412 valF1=0.0000 eps=0.88 742s
+eps_target=1.0 ep13 loss=1.407 valF1=0.0000 eps=0.92 767s
+eps_target=1.0 ep14 loss=1.382 valF1=0.0000 eps=0.96 790s
+eps_target=1.0 ep15 loss=1.347 valF1=0.0000 eps=0.99 811s
+DONE 1.0 0.0 {'n': 0}
+eps_target=4.0 ep1 loss=3.196 valF1=0.0000 eps=1.24 25s
+eps_target=4.0 ep2 loss=2.231 valF1=0.0000 eps=1.57 48s
+eps_target=4.0 ep3 loss=1.741 valF1=0.0000 eps=1.85 69s
+eps_target=4.0 ep4 loss=1.543 valF1=0.0000 eps=2.09 96s
+eps_target=4.0 ep5 loss=1.482 valF1=0.0000 eps=2.31 118s
+eps_target=4.0 ep6 loss=1.387 valF1=0.0000 eps=2.52 141s
+eps_target=4.0 ep7 loss=1.375 valF1=0.0000 eps=2.71 164s
+eps_target=4.0 ep8 loss=1.320 valF1=0.0000 eps=2.89 187s
+eps_target=4.0 ep9 loss=1.341 valF1=0.0000 eps=3.07 211s
+eps_target=4.0 ep10 loss=1.307 valF1=0.0000 eps=3.23 234s
+eps_target=4.0 ep11 loss=1.283 valF1=0.0000 eps=3.40 259s
+eps_target=4.0 ep12 loss=1.262 valF1=0.0000 eps=3.55 284s
+eps_target=4.0 ep13 loss=1.265 valF1=0.0000 eps=3.70 307s
+eps_target=4.0 ep14 loss=1.249 valF1=0.0000 eps=3.85 330s
+eps_target=4.0 ep15 loss=1.215 valF1=0.0000 eps=4.00 351s
+DONE 4.0 0.0 {'n': 0}

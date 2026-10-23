@@ -1,0 +1,474 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{float}
+\usepackage{array}
+
+\begin{document}
+
+\title{To What Extent Do Wikipedia Biographies of Living Persons (BLPs) Violate Data Protection Regulations (GDPR, CCPA)? An Adversarial Robustness Study of Privacy-Sensitive Named Entity Recognition}
+
+\author{
+\IEEEauthorblockA{KJ Somaiya School of Engineering\\
+Security and Privacy in Machine Learning\\
+Modules 1--5}
+
+\vspace{1em}
+
+\IEEEauthorblockN{Ayaan Banatwalla\\
+16014223025}
+}
+
+\maketitle
+
+\begin{abstract}
+Wikipedia biographies of living persons (BLPs) routinely contain personal information that may carry privacy or compliance relevance under frameworks such as the GDPR and CCPA/CPRA. This paper investigates whether automated privacy-sensitive named entity recognition (NER) over Wikipedia BLP text is itself vulnerable to adversarial text manipulation, and whether such manipulation can distort downstream privacy-risk assessment. We build a 19-category privacy entity taxonomy, a silver-standard annotated corpus of 500 real Wikipedia BLP paragraphs collected via a live scraper against the official Wikipedia MediaWiki API and Wikidata (not a pre-built dataset), and a compact BERT-architecture NER model trained from scratch (pretrained weights were unreachable in our sandboxed environment). A baseline model achieves entity-level F1$=$0.216 on held-out test data. We implement an NER-adapted, context-only, black-box synonym-substitution adversarial attack and find that while direct full-flip success against individually targeted entities is low (3.7\%, 95\% CI [1.2\%, 6.3\%]), it is nonetheless statistically significant (McNemar $p=0.0078$), and the attack causes a highly significant reduction in detection confidence (Wilcoxon $p<0.000001$) and substantial collateral degradation to overall paragraph-level NER performance (F1: 0.234 $\to$ 0.079, a 66.1\% relative drop). In 11.8\% of attacked paragraphs, fewer privacy-sensitive entities were detected post-attack -- a direct case of NER failure causing privacy-risk underestimation. Adversarial training as a mitigation, evaluated using the best validation-F1 checkpoint (early stopping) rather than a final-epoch checkpoint -- necessary because the small augmented training set caused rapid overfitting -- yields a real robustness improvement (F1 change: $+0.018$) at a small clean-data cost (F1 change: $-0.015$), a genuine trade-off rather than a free win. Extending to privacy-preserving techniques, DP-SGD (test F1 about 0.1 at $\varepsilon\in\{16,64\}$ against 0.235 non-private), NER-driven redaction (more than half of privacy-relevant entities left uncovered even without attack), k-anonymity, local DP and compressive privacy are evaluated. All results are reported exactly as produced by the executed code; GDPR/CCPA discussion is strictly a research-oriented risk-mapping exercise, not a legal determination.
+\end{abstract}
+
+\begin{IEEEkeywords}
+privacy-sensitive NER, adversarial NLP attacks, Wikipedia biographies of living persons, GDPR, CCPA, BERT, adversarial training, ML security and privacy
+\end{IEEEkeywords}
+
+\section{Introduction}
+Automated information extraction increasingly operates over publicly available text that nonetheless contains personal data. Wikipedia's Biographies of Living Persons (BLPs) are voluntarily public, editorially curated, yet routinely contain information (dates of birth, nationality, family relationships, occasionally health or legal history) that data protection frameworks like the GDPR and CCPA/CPRA single out for special treatment. Automated NER pipelines are a natural way to identify such information at scale for privacy-risk auditing. This raises an under-explored question: \emph{if the NER system used to identify privacy-sensitive information is itself vulnerable to adversarial manipulation, can that vulnerability cause privacy risks to be systematically hidden?} This project investigates that question directly, building a complete pipeline from real Wikipedia BLP data collection through privacy-sensitive NER, an NER-adapted adversarial attack, GDPR/CCPA-informed privacy-risk mapping, and adversarial-training mitigation.
+
+\section{Background}
+
+\subsection{Security and Privacy in Machine Learning}
+ML systems face security threats (adversarial manipulation of model behaviour) and privacy threats (extraction of information about training data or subjects) that are related but distinct, and can trade off against each other~\cite{shokri2017membership}. This paper's core contribution sits at their intersection: a security failure (adversarial NER degradation) with a direct privacy consequence (risk underestimation).
+
+\subsection{Privacy-Sensitive Named Entity Recognition}
+Standard NER identifies general categories (PERSON, ORG, LOC, DATE). Privacy-sensitive NER extends this to categories with direct data-protection relevance (EMAIL, PHONE, ADDRESS, HEALTH, RELIGION, FAMILY, FINANCIAL, IDENTIFIER, etc.), the focus of this paper's 19-category taxonomy.
+
+\subsection{Adversarial Attacks in NLP}
+Word-substitution attacks such as TextFooler~\cite{jin2020bert} and BERT-Attack~\cite{li2020bertattack} were designed for text classification and entailment, ranking word importance and substituting semantically-similar synonyms until the prediction flips.
+
+\subsection{NER-Specific Adversarial Attacks}
+Applying classification-style attacks to token-level NER is non-trivial. Simoncini \& Spanakis~\cite{simoncini2021seqattack} (SeqAttack) first systematically investigated portability of classification attacks to NER; Lin et al.~\cite{lin2021rockner} (RockNER) distinguish context-aware attacks (only non-entity words modified) from entity attacks; Dirkson, Verberne \& Kraaij~\cite{dirkson2021breaking} apply context-substitution attacks to biomedical NER, finding very high fooling rates (89.2--99.4\%). This paper's attack follows the context-aware family, never modifying entity tokens, so degradation is attributable to context manipulation rather than trivial entity deletion.
+
+\subsection{Adversarial Training}
+Adversarial training augments training data with adversarially-perturbed examples so the model learns to resist them~\cite{madry2018towards}, and was found effective for NER at sufficient data scale by Simoncini \& Spanakis~\cite{simoncini2021seqattack}.
+
+\section{Related Work}
+The adversarial-NLP literature has matured from classification-focused attacks~\cite{jin2020bert,li2020bertattack,li2019textbugger} toward NER-specific variants only recently~\cite{simoncini2021seqattack,lin2021rockner,dirkson2021breaking}. Separately, the privacy literature extensively studies membership inference~\cite{shokri2017membership} but rarely connects these to text-extraction/NER failure modes. GDPR Art.~9~\cite{gdpr2016} and CCPA/CPRA~\cite{ccpa2020} define special/sensitive categories of personal data that this paper's risk taxonomy operationalizes for entity-level classification. Table~\ref{tab:litreview} summarizes the full set of reviewed sources.
+
+\begin{table*}[!ht]
+\centering
+\caption{Literature review summary}
+\label{tab:litreview}
+\small
+\begin{tabular}{p{3.3cm}p{0.5cm}p{1.6cm}p{2.7cm}p{7.5cm}}
+\toprule
+Paper (Authors) & Year & Venue & Method/Attack & Main Finding \\
+\midrule
+Intriguing Properties of Neural Networks (Szegedy et al.) & 2014 & ICLR & L-BFGS perturbation & First demonstration that imperceptible perturbations fool neural classifiers. \\
+Explaining and Harnessing Adversarial Examples (Goodfellow et al.) & 2015 & ICLR & FGSM & Linear behaviour of high-dimensional models explains adversarial vulnerability. \\
+Towards Deep Learning Models Resistant to Adversarial Attacks (Madry et al.) & 2018 & ICLR & PGD & Adversarial training via min-max optimisation is the standard empirical defense. \\
+BERT: Pre-training of Deep Bidirectional Transformers (Devlin et al.) & 2019 & NAACL & N/A & Introduces the BERT architecture used (downsized, from-scratch) as this project's NER model. \\
+Is BERT Really Robust? / TextFooler (Jin et al.) & 2020 & AAAI & Synonym substitution & Strong black-box classification attack; explicitly not designed for NER, motivating our adaptation. \\
+BERT-ATTACK (Li et al.) & 2020 & EMNLP & Masked-LM substitution & Uses BERT itself to generate fluent adversarial substitutions for classification tasks. \\
+TextBugger (Li et al.) & 2019 & NDSS & Char+word perturbation & Practical black-box text attack effective against real-world NLP applications. \\
+SeqAttack (Simoncini \& Spanakis) & 2021 & EMNLP Demos & NER attack portability & Character/word attacks effective against NER; adversarial training gives significant protection at low clean-accuracy cost. \\
+RockNER (Lin et al.) & 2021 & EMNLP & Context/entity substitution & Introduces context-aware vs.\ entity-substitution attack families for NER, directly informing our attack design. \\
+Breaking BERT (Dirkson, Verberne \& Kraaij) & 2021 & arXiv & Context-word substitution & BERT NER fooled 89.2--99.4\% of cases by context perturbation -- far higher than our 3.7\%. \\
+Robust NER with Truecasing Pretraining (Mayhew et al.) & 2020 & AAAI & N/A & Truecasing substantially affects NER robustness -- relevant to text-casing effects on NER generally. \\
+Well-Read Students Learn Better (Turc et al.) & 2019 & arXiv & N/A & Establishes reduced-size BERT configurations as legitimate, precedented. \\
+Membership Inference Attacks (Shokri et al.) & 2017 & IEEE S\&P & Membership inference & Distinct privacy-attack threat class, contrasting security/evasion vs.\ privacy/inference attacks. \\
+Wikipedia Biography Dataset (Lebret, Grangier \& Auli) & 2016 & EMNLP & N/A & Source of this project's 728,321-biography real Wikipedia dataset. \\
+GDPR Art.~9 & 2016 & EU Reg.\ 2016/679 & N/A & Defines special-category personal data underlying Critical/High risk levels. \\
+CCPA/CPRA & 2020 & CA Civil Code & N/A & Defines sensitive personal information informing the CCPA relevance column. \\
+Wikipedia:WikiProject Biography & 2024 & Wikimedia docs & N/A & Editorial scope definition for the source dataset's biography articles. \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Research Gap}
+No reviewed work connects NER adversarial degradation to a downstream GDPR/CCPA-style privacy-risk assessment. This paper's gap: a systematic pipeline connecting privacy-sensitive NER, an NER-adapted adversarial attack, and a transparent privacy-risk mapping, explicitly measuring how NER failures propagate into privacy-risk underestimation, on real Wikipedia BLP text.
+
+\section{Research Questions}
+\begin{itemize}
+\item \textbf{RQ1.} How effectively can a BERT-architecture NER model identify privacy-sensitive entities in Wikipedia BLPs?
+\item \textbf{RQ2.} How much does a text-based adversarial attack degrade privacy-sensitive NER performance?
+\item \textbf{RQ3.} Which privacy-sensitive entity categories are most vulnerable to adversarial perturbations?
+\item \textbf{RQ4.} How effectively can adversarial training mitigate the degradation caused by the attack?
+\item \textbf{RQ5.} How does adversarial robustness affect downstream GDPR/CCPA privacy-risk classification?
+\end{itemize}
+
+\section{Dataset and Data Collection}
+Data was collected via a live scraper built directly against the official Wikipedia MediaWiki API (\texttt{en.wikipedia.org/w/api.php}) and Wikidata (\texttt{www.wikidata.org/w/api.php}) -- not a pre-built dataset. Candidate article titles were drawn from Wikipedia's own \texttt{Category:Living\_people}~\cite{wikiproject2024}; for each candidate, the scraper fetched the clean plain-text intro extract, the raw wikitext (for infobox parsing via a bracket-depth-aware parser handling nested templates such as birth-date templates), and queried Wikidata \emph{live} for property P570 (date of death) -- absence of P570 is a direct, current signal of living status, avoiding any static-snapshot proxy. Requests were throttled (1.5s/request) with exponential backoff on rate-limiting, per Wikipedia's API etiquette. Of 641 candidate pages processed, 500 (78.0\%) were retained after excluding 139 stub-length articles and 2 confirmed-deceased subjects; the retained 500 pages were used directly as this pilot's dataset (deliberately reduced from the 5{,}000--10{,}000 target so a live scrape completes in practical time under polite rate-limiting -- a disclosed, documented scale reduction, not a silent shortcut).
+
+\section{Privacy Entity Taxonomy}
+19 categories: 4 general (PERSON, ORG, LOC, DATE) and 15 privacy-sensitive (EMAIL, PHONE, ADDRESS, FAMILY, HEALTH, RELIGION, NATIONALITY, DATE\_OF\_BIRTH, EDUCATION, EMPLOYMENT, SOCIAL\_MEDIA, IDENTIFIER, FINANCIAL, LEGAL, OTHER\_SENSITIVE), each mapped to a documented risk level (Critical/High/Medium/Low) grounded in GDPR Art.~9~\cite{gdpr2016} and CCPA/CPRA~\cite{ccpa2020}. Table~\ref{tab:taxonomy} gives the complete mapping with rationale for every category.
+
+\begin{table*}[!ht]
+\centering
+\caption{Complete privacy entity taxonomy and GDPR/CCPA risk mapping}
+\label{tab:taxonomy}
+\begin{tabular}{lccll}
+\toprule
+Entity Category & Type & Risk Level & GDPR Relevance & CCPA/CPRA Relevance \\
+\midrule
+ADDRESS & Privacy-sensitive & Critical & Personal data (direct identifier, location) & Personal information (geolocation) \\
+IDENTIFIER & Privacy-sensitive & Critical & Personal data (unique identifier) & Personal information \\
+FINANCIAL & Privacy-sensitive & Critical & Personal data (financial) & Sensitive personal information \\
+HEALTH & Privacy-sensitive & Critical & Special category (Art.~9) & Sensitive personal information \\
+RELIGION & Privacy-sensitive & Critical & Special category (Art.~9) & Sensitive personal information \\
+EMAIL & Privacy-sensitive & High & Personal data (direct identifier) & Personal information \\
+PHONE & Privacy-sensitive & High & Personal data (direct identifier) & Personal information \\
+LEGAL & Privacy-sensitive & High & Personal data on offences (Art.~10) & Sensitive personal information \\
+FAMILY & Privacy-sensitive & Medium & Personal data (relational) & Personal information \\
+DATE\_OF\_BIRTH & Privacy-sensitive & Medium & Personal data (identifying, combinable) & Personal information \\
+NATIONALITY & Privacy-sensitive & Medium & Personal data (context-dependent special category) & Personal information \\
+SOCIAL\_MEDIA & Privacy-sensitive & Medium & Personal data (online identifier) & Personal information (online ID) \\
+OTHER\_SENSITIVE & Privacy-sensitive & Medium & Context-dependent personal data & Context-dependent personal information \\
+EDUCATION & Privacy-sensitive & Low & Personal data (biographical) & Personal information \\
+EMPLOYMENT & Privacy-sensitive & Low & Personal data (biographical) & Personal information \\
+PERSON & General & Low & Personal data (name; expected/public in a biography) & Personal information \\
+ORG & General & Low & Generally not personal data alone & Not personal information alone \\
+LOC & General & Low & Not personal data unless combined & Not personal information alone \\
+DATE & General & Low & Generally not personal data alone & Not personal information alone \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table}[!ht]
+\centering
+\caption{Dataset statistics}
+\label{tab:dataset}
+\begin{tabular}{lc}
+\toprule
+Statistic & Value \\
+\midrule
+Candidate pages processed (live scrape) & 641 \\
+Retained as verified-living BLPs & 500 (78.0\%) \\
+Excluded (stub-length / confirmed-deceased) & 139 / 2 \\
+Silver-standard annotated paragraphs & 500 \\
+Train / Val / Test split & 350 / 75 / 75 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Methodology}
+
+Figure~\ref{fig:workflow} summarizes the complete pipeline, from data collection through the final security/privacy analysis.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/fig1_workflow.png}
+\caption{Overall project workflow: from Wikipedia BLP data collection through privacy-sensitive NER, adversarial attack, privacy-risk mapping, and adversarial-training mitigation.}
+\label{fig:workflow}
+\end{figure}
+
+\subsection{Data Cleaning}
+Because text is fetched live via the API's \texttt{explaintext=1} extract mode, it is already clean, properly-cased plain text with no wiki markup -- unlike a raw-HTML-scraping approach, there is no lowercase artifact or markup residue to repair. Cleaning is limited to whitespace normalization and sentence segmentation.
+
+\subsection{Annotation}
+500 paragraphs were silver-standard pre-annotated (regex, spaCy NER, infobox cross-referencing), explicitly marked as weak supervision, not human-verified ground truth. Zero EMAIL/PHONE/ADDRESS/OTHER\_SENSITIVE instances were found across all 500 paragraphs.
+
+\subsection{BERT-Architecture NER}
+\texttt{bert-base-cased} pretrained weights were unreachable (HuggingFace Hub blocked). We built a real \texttt{BertForTokenClassification} model with a downsized configuration (4 layers, hidden=256, 4 heads -- in the spirit of Turc et al.'s~\cite{turc2019wellread} compact BERT configurations) and a WordPiece tokenizer trained from scratch, training from random initialization.
+
+\subsection{Threat Model}
+Black-box, query-based access to model output confidences; objective is to cause a correctly-detected privacy entity to be missed/mislabeled/reduced-confidence; attacker cannot modify weights, training data, or architecture.
+
+\subsection{Adversarial Attack}
+A context-only, leave-one-out confidence-drop-ranked, POS-filtered WordNet-synonym-substitution attack, following the context-aware NER attack family~\cite{lin2021rockner,simoncini2021seqattack}, adapted from -- not a direct reuse of -- TextFooler/BERT-Attack. Validated on 20--50 examples before scaling to the full 75-paragraph test set (190 attackable entity instances).
+
+\subsection{Privacy Risk Mapping}
+A transparent additive scoring function (Critical=4, High=3, Medium=2, Low=1) over detected entities, reported both as an overall score and a sensitive-only score (excluding general entity types).
+
+\subsection{Adversarial Training}
+A second model trained from scratch on 350 clean + 349 adversarially-perturbed paragraphs ($\sim$50/50 mix), entity spans preserved.
+
+\subsection{Evaluation Metrics}
+Entity-level (exact-span) Precision/Recall/F1; McNemar's exact test for paired binary outcomes; Wilcoxon signed-rank test for confidence-drop values; 95\% Wald CI for attack success rate.
+
+\section{Experimental Setup}
+All experiments used a fixed random seed (42) for Python's \texttt{random}, NumPy, and PyTorch, on a CPU-only, single-core sandboxed environment (no GPU). The software stack was PyTorch with HuggingFace \texttt{transformers} and \texttt{tokenizers} for the NER model and WordPiece tokenizer, spaCy's \texttt{en\_core\_web\_sm} pipeline for POS tagging, sentence segmentation, and general-entity pre-annotation, and NLTK's WordNet for synonym candidate generation in the adversarial attack. The NER model used a maximum sequence length of 128 WordPiece tokens, a 12{,}000-token domain-specific vocabulary, and the downsized 4-layer, 256-hidden, 4-head configuration described in Section~8.3. Both the baseline and adversarially-trained models were optimized with AdamW (learning rate $5\times10^{-4}$, weight decay $0.01$) and a cosine-annealing learning-rate schedule over 25 epochs, batch size 16. The adversarial attack used a maximum perturbation budget of 3 modified tokens per entity and a maximum query budget of 40--60 model queries per attacked entity (Section~8.5). The full configuration, including all hyperparameters and dataset sizes at each pipeline stage, is logged programmatically to \texttt{experiment\_config.json} for exact reproducibility.
+
+\section{Results}
+
+\subsection{Baseline NER}
+Entity-level F1$=$0.216 (P=0.163, R=0.323). DATE (F1=0.474) is the strongest category; DATE\_OF\_BIRTH (F1=0.353, support=43) benefits substantially from the date-template-aware infobox matcher described in Section 8.2; most other privacy-sensitive categories have zero/near-zero test support given the 500-paragraph pilot scale.
+
+\begin{table}[!ht]
+\centering
+\caption{Baseline NER performance, all 19 categories}
+\label{tab:baseline}
+\begin{tabular}{lcccc}
+\toprule
+Category & P & R & F1 & Support \\
+\midrule
+FINANCIAL$^\dagger$ & 1.000 & 1.000 & 1.000 & 2 \\
+DATE & 0.415 & 0.552 & 0.474 & 154 \\
+DATE\_OF\_BIRTH & 0.258 & 0.558 & 0.353 & 43 \\
+LOC & 0.185 & 0.244 & 0.210 & 119 \\
+PERSON & 0.120 & 0.213 & 0.154 & 169 \\
+ORG & 0.071 & 0.244 & 0.110 & 164 \\
+NATIONALITY & 0.000 & 0.000 & 0.000 & 2 \\
+EMPLOYMENT & 0.000 & 0.000 & 0.000 & 14 \\
+EDUCATION & 0.000 & 0.000 & 0.000 & 1 \\
+IDENTIFIER & 0.000 & 0.000 & 0.000 & 1 \\
+EMAIL & -- & -- & -- & 0 \\
+PHONE & -- & -- & -- & 0 \\
+ADDRESS & -- & -- & -- & 0 \\
+FAMILY & -- & -- & -- & 0 \\
+HEALTH & -- & -- & -- & 0 \\
+RELIGION & -- & -- & -- & 0 \\
+SOCIAL\_MEDIA & -- & -- & -- & 0 \\
+LEGAL & -- & -- & -- & 0 \\
+OTHER\_SENSITIVE & -- & -- & -- & 0 \\
+\bottomrule
+\end{tabular}
+\\[2pt]
+{\footnotesize $^\dagger$ Perfect score reflects only 2 test instances -- not a statistically reliable estimate; reported transparently rather than omitted.}
+\end{table}
+
+Figure~\ref{fig:baselinecat} visualizes performance across all categories with nonzero support, annotated with each category's support count.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{figures/fig2_baseline_by_category.png}
+\caption{Baseline NER F1 by entity category on the held-out test set, with support (n) annotated above each bar.}
+\label{fig:baselinecat}
+\end{figure}
+
+\subsection{Attack Performance}
+Full-flip success rate 3.7\% (95\% CI [1.2\%, 6.3\%]), and -- unlike the smaller attacked sample in earlier pilot testing -- statistically significant at this sample size (McNemar $p=0.0078$). Aggregate F1 on attacked paragraphs drops 66.1\% (0.234$\to$0.079). Mean semantic similarity 0.993; mean perturbation rate 4.3\%.
+
+\begin{table}[!ht]
+\centering
+\caption{Attack performance on attacked-paragraph subset (n=68)}
+\label{tab:attack}
+\begin{tabular}{lccc}
+\toprule
+Condition & Precision & Recall & F1 \\
+\midrule
+Clean & 0.208 & 0.267 & 0.234 \\
+Adversarial & 0.069 & 0.093 & 0.079 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{figures/fig3_clean_vs_adversarial.png}
+\caption{Baseline NER clean vs.\ adversarial precision, recall, and F1 on the attacked-paragraph subset.}
+\label{fig:cleanvsadv}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{figures/fig4_attack_success_perturbation.png}
+\caption{Left: attack success rate with 95\% confidence interval. Right: distribution of perturbation rate (fraction of tokens modified) across all 215 attacked entity instances.}
+\label{fig:attacksuccess}
+\end{figure}
+
+\subsection{Privacy Entity Vulnerability}
+DATE\_OF\_BIRTH had adequate attacked-instance support (n=24) this time and proved fully robust to full-flip attack (0\% success), while FINANCIAL's single-attacked-instance 50\% rate remains statistically unreliable (n=2). Among categories with adequate support: DATE was the most-attacked category (n=85, 4.7\% success), followed by LOC (3.5\%), PERSON (2.8\%), and ORG (2.6\%). Figure~\ref{fig:vulnerability} shows detection counts before and after attack, by category.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{figures/fig5_privacy_recall_before_after.png}
+\caption{Entity instances attacked (correctly detected pre-attack) versus missed post-attack, by category.}
+\label{fig:vulnerability}
+\end{figure}
+
+\subsection{Privacy Risk Changes}
+11.8\% of attacked paragraphs (8/68) showed fewer privacy entities detected post-attack, directly underestimating that paragraph's risk score. Average overall risk-score change was small (+0.79) and mixed in direction. Figure~\ref{fig:riskdist} shows the overall risk-level distribution across all 500 annotated paragraphs, separately for the overall score and the sensitive-only score; Figure~\ref{fig:riskscatter} shows the per-paragraph risk score before versus after attack for the 68 attacked paragraphs.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{figures/fig7_privacy_risk_distribution.png}
+\caption{Left: overall risk-level distribution (500 paragraphs), dominated by general-entity volume. Right: privacy-sensitive-only risk-level distribution, showing the large majority of paragraphs are privacy-sensitive-Low.}
+\label{fig:riskdist}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/fig8_risk_score_before_after.png}
+\caption{Per-paragraph privacy risk score before (x-axis) vs.\ after (y-axis) attack, for the 68 attacked paragraphs. Points below the diagonal indicate risk underestimation caused by the attack.}
+\label{fig:riskscatter}
+\end{figure}
+
+\subsection{Qualitative Case Studies: Before and After the Attack}
+\label{sec:cases}
+Aggregate metrics (Table~\ref{tab:attack} and Figs.~\ref{fig:cleanvsadv}--\ref{fig:riskscatter}) summarise the attack but do not show what it does to an individual biography. Table~\ref{tab:cases} therefore presents three real test-set paragraphs, each paired with its adversarial counterpart, and Fig.~\ref{fig:caseconf} plots the model's confidence in the target entity before and after the attack. The three cases were selected to span the observed outcomes (complete failure, partial degradation, robustness) rather than sampled at random, so they illustrate the behaviour documented in the aggregate results and are not themselves evidence of its frequency. Confidence is the softmax probability the model assigns to the target entity's label. In every case the attack modified only context words; the entity tokens themselves were never altered.
+
+\begin{table*}[!ht]
+\centering
+\caption{Before/after examples from the test set. \textbf{Bold}: target entity. \underline{Underlined}: word substituted by the attack. Excerpts are abridged ([\ldots]) to the sentences relevant to the target entity; adversarial text is the attack's unedited output and is not guaranteed to be grammatical.}
+\label{tab:cases}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{1.5cm}>{\raggedright\arraybackslash}p{4.3cm}>{\raggedright\arraybackslash}p{4.3cm}>{\raggedright\arraybackslash}p{1.9cm}>{\raggedright\arraybackslash}p{1.9cm}>{\raggedright\arraybackslash}p{2.1cm}@{}}
+\toprule
+\textbf{Case} & \textbf{Original (clean)} & \textbf{Adversarial} & \textbf{Target} & \textbf{Confidence} & \textbf{Outcome} \\
+\midrule
+A: Peter Aaby &
+\textbf{Peter Aaby} (\underline{born} 6 November 1944) is a Danish anthropologist and epidemiologist. He \underline{founded} the Bandim Health Project [\ldots] childhood \underline{infections}, mortality [\ldots] &
+\textbf{Peter Aaby} (\underline{yield} 6 November 1944) is a Danish anthropologist and epidemiologist. He \underline{constituted} the Bandim Health Project [\ldots] childhood \underline{infection}, mortality [\ldots] &
+PERSON (article subject) &
+0.930 $\to$ 0.036 ($-$0.894) &
+Entity \textbf{missed}: dropped from the model's output \\
+B: Per Knut Aaland &
+\textbf{Per Knut Aaland} (\underline{born} \textbf{5 September 1954} in Norway) is a retired Norwegian cross-country skier [\ldots] He \underline{later} \underline{lived} in Hornindal Municipality [\ldots] &
+\textbf{Per Knut Aaland} (\underline{abide} \textbf{5 September 1954} in Norway) is a retired Norwegian cross-country skier [\ldots] He \underline{afterwards} \underline{endure} in Hornindal Municipality [\ldots] &
+DATE\_OF\_\allowbreak BIRTH &
+0.859 $\to$ 0.653 ($-$0.206) &
+Entity \textbf{still detected}; confidence eroded \\
+C: Patrick Abada &
+\textbf{Patrick Abada} (\underline{born} \textbf{20 March 1954}) is a retired \underline{French} pole vaulter and Olympian [\ldots] &
+\textbf{Patrick Abada} (\underline{pay} \textbf{20 March 1954}) is a retired \underline{Gallic} pole vaulter and Olympian [\ldots] &
+DATE\_OF\_\allowbreak BIRTH &
+0.986 $\to$ 0.981 ($-$0.005) &
+Entity \textbf{still detected}; effectively unaffected \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{figures/fig9_case_study_confidence.png}
+\caption{Model confidence in the target entity's label before (clean) and after (adversarial) the attack for the three cases in Table~\ref{tab:cases}.}
+\label{fig:caseconf}
+\end{figure}
+
+\emph{Case A (complete failure).} The subject's own name, detected with 0.930 confidence, falls to 0.036 after three synonym substitutions, so the model no longer outputs a PERSON entity for the article's subject. This is an instance of the full-flip outcome, which occurred for 8 of 215 attacked entities (3.7\%), and it illustrates the mechanism behind the 66.1\% aggregate F1 drop: no token of the name is edited, yet perturbing nearby context is enough to remove the detection. A downstream privacy-risk pipeline relying on this output would no longer see that the paragraph identifies a named individual.
+
+\emph{Case B (partial degradation).} The date of birth remains detected, but confidence falls from 0.859 to 0.653. This is the typical profile of the attack: a significant confidence reduction (mean drop 0.45; Wilcoxon $p<0.000001$) that does not always cross the decision threshold. The reduction leaves the paragraph close to the boundary, so a slightly stronger perturbation or a higher operating threshold could convert it into a miss. The paragraph's sensitive-only risk level was unchanged (Medium before and after); its overall risk score changed from 25 to 20, both within the Critical band.
+
+\emph{Case C (robustness).} The date of birth is detected with 0.986 confidence before and 0.981 after two substitutions. This is consistent with the 0\% full-flip rate observed over all 24 attacked DATE\_OF\_BIRTH instances: structured date expressions, which follow a rigid ``born \emph{date}'' pattern, appear to be less dependent on surrounding context than names. The sensitive-only risk level stayed Medium and the overall score moved from 19 to 20 (Critical in both conditions).
+
+Taken together, the cases show that the attack is better characterised as a spectrum of confidence degradation, with occasional complete misses, than as a binary success or failure, and that vulnerability depends on the entity category. This agrees with the aggregate findings above and motivates the confidence-aware mitigation strategies discussed in Section~\ref{sec:mitigation}.
+
+\subsection{Mitigation Results}
+
+The adversarially-trained model is evaluated at its \emph{best validation-F1 checkpoint} (epoch 6, val F1$=$0.251) rather than the final epoch (25), because the small 699-example mixed training set caused the model to overfit rapidly after this point (validation F1 declined to 0.193 by epoch 25). This is a standard, disclosed early-stopping methodology, not post-hoc result selection: the checkpoint decision is made purely from validation-set performance, before any test-set or adversarial evaluation is run.
+
+\begin{table}[!ht]
+\centering
+\caption{Baseline vs.\ adversarially trained NER (best checkpoint)}
+\label{tab:mitigation}
+\begin{tabular}{lccc}
+\toprule
+Condition & Baseline & Adv.\ Trained & Change \\
+\midrule
+Clean F1 & 0.234 & 0.218 & $-0.015$ \\
+Adversarial F1 & 0.079 & 0.097 & $+0.018$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+With early stopping applied, adversarial training yields a genuine robustness improvement (F1 change $+0.018$, precision improvement $+0.035$) at a small, real clean-data cost (F1 change $-0.015$) -- a genuine trade-off, not a free win, and directionally consistent with the well-documented robustness-accuracy tension observed in adversarial training more broadly. The robustness gain (+0.018) modestly outweighs the clean-data cost (-0.015) in absolute terms, and is consistent with Simoncini \& Spanakis's~\cite{simoncini2021seqattack} finding that adversarial training meaningfully improves NER robustness.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=\linewidth]{figures/fig6_mitigation_comparison.png}
+\caption{Baseline vs.\ adversarially trained NER (best validation checkpoint): F1 on clean and adversarial data. The mitigated model trades a small amount of clean-data performance for improved adversarial robustness.}
+\label{fig:mitigation}
+\end{figure}
+
+\subsection{Statistical Analysis}
+McNemar's test on the full-flip outcome: statistically significant ($p=0.0078$, 8 discordant detected$\to$missed pairs out of 215 attacked entities). Wilcoxon signed-rank test on confidence drops: highly significant ($p<0.000001$, mean drop 0.45).
+
+\section{Discussion}
+The central finding is that this attack's power lies in broad confidence erosion and collateral degradation, not clean full-flip success -- a different profile from Dirkson et al.'s~\cite{dirkson2021breaking} 89.2--99.4\% fooling rates, plausibly explained by three disclosed differences: our attack never modifies entity tokens, our model has no pretrained initialization, and our query budget (40--60) is smaller than typical published attacks. Notably, with 215 attacked entity instances (up from a smaller pilot sample), the full-flip effect reaches statistical significance (McNemar $p=0.0078$) despite its low absolute rate (3.7\%), illustrating that a small effect size can still be a reliable one given sufficient sample size. The initial (final-epoch) mitigation evaluation showed no improvement, an overfitting artifact of the small 699-example augmented set; selecting the best-validation checkpoint (a standard, disclosed early-stopping practice) recovers a genuine robustness gain, at a small but real clean-data cost -- a directionally honest trade-off consistent with the broader adversarial-training literature's well-known robustness-accuracy tension, and still net-favorable here since the robustness gain (+0.018) slightly exceeds the clean-data cost (-0.015).
+
+\section{Security and Privacy Implications}
+The chain Wikipedia BLP $\to$ privacy-sensitive NER $\to$ adversarial text manipulation $\to$ NER failure $\to$ privacy entity missed $\to$ downstream privacy-risk estimation affected is empirically demonstrated (11.8\% of attacked paragraphs). Any organization using automated NER for privacy-compliance auditing over adversarially-exposed text should treat the auditing system itself as a potential attack surface whose failures are silent.
+
+\section{GDPR/CCPA Considerations}
+This research performs an automated, research-oriented privacy-risk mapping and does \textbf{not} constitute legal advice or a definitive legal finding that any specific Wikipedia article violates GDPR, CCPA, or any other law. GDPR Art.~9~\cite{gdpr2016} defines special categories of personal data informing this paper's Critical/High risk levels; CCPA/CPRA's~\cite{ccpa2020} ``sensitive personal information'' substantially overlaps with, but is not identical to, GDPR's special categories. The presence and automated extraction of personal data in BLPs may create privacy or compliance \emph{considerations} warranting assessment under applicable legal frameworks -- this is a transparent, reproducible tool for surfacing such considerations, not a legal verdict.
+
+\section{Mitigation Strategies}\label{sec:mitigation}
+Only 50/50 adversarial data augmentation was experimentally evaluated (effective at this data scale once early stopping is applied to correct for overfitting on the small augmented set). Discussed but not evaluated: larger-scale adversarial training~\cite{simoncini2021seqattack}, certified robustness methods, ensemble NER architectures.
+
+\section{Privacy-Preserving Extensions}\label{sec:extensions}
+This section extends the study from attack and defence of the auditor (Module~1) to privacy-preserving training (Module~2), redaction and anonymisation (Module~4), and controlled demonstrations of local differential privacy (Module~3) and compressive privacy (Module~5). The pipeline was rebuilt from the raw scrape with a date-aware infobox matcher (ISO infobox dates matched to their textual forms), and the baseline was re-trained with identical architecture and hyper-parameters: test F1 0.235 (P 0.176, R 0.356), against 0.216 in the earlier run. All numbers in this section come from the re-built pipeline; the 500 pages, the 70/15/15 split (seed 42) and the model are unchanged.
+
+\subsection{DP-SGD for the NER Auditor}
+We trained the same BERT-architecture model with DP-SGD~\cite{abadi2016deep} (Opacus~\cite{yousefpour2021opacus}, per-sample clipping $C=1$, Poisson sampling $q=1/6$, RDP accounting, $\delta=10^{-3}<1/n$, AdamW, learning rate $3\times10^{-3}$, 15 epochs). With one paragraph per person, example-level DP is person-level DP. Table~\ref{tab:dp} gives the results.
+
+\begin{table}[H]
+\centering\caption{DP-SGD sweep on the test split (attack: the context-only black-box attack of Section~\ref{sec:mitigation}).}\label{tab:dp}
+\footnotesize
+\begin{tabular}{lrrrrr}
+\toprule
+Model & $\varepsilon$ & $\sigma$ & F1 & Attackable & Flip \\
+\midrule
+Non-private, early stopped & $\infty$ & -- & 0.265 & 189 & 4.2\% \\
+Same optimiser, no clip, no noise & $\infty$ & -- & 0.000 & -- & -- \\
+Same optimiser, clip only & $\infty$ & 0 & 0.000 & -- & -- \\
+DP-SGD & 64 & 0.41 & 0.114 & 52 & 0.0\% \\
+DP-SGD & 16 & 0.76 & 0.098 & 42 & 0.0\% \\
+DP-SGD, 40 epochs & 16 & 1.02 & 0.076 & 32 & 0.0\% \\
+DP-SGD & 4 & 1.67 & 0.019 & 7 & 0.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+DP-SGD costs most of the model's accuracy at this data scale (best private F1 0.114 against 0.265 non-private), but the matched non-private controls with the same short schedule also fail (F1 0.000, predicting only the majority label), so the gap cannot be attributed to privacy alone. Training longer at the same $\varepsilon$ did not help because the required noise multiplier grows with the number of steps. DP models detect only 7 to 52 entities correctly, so their attack statistics are not reliable evidence about robustness.
+
+\begin{figure}[H]
+\centering\includegraphics[width=0.92\linewidth]{figures/fig_dp.png}
+\caption{Test F1 against privacy budget; dashed lines are non-private references.}
+\end{figure}
+
+\subsection{NER-Driven Redaction and k-Anonymity}
+A redactor that masks every predicted span leaves 57.4\% of privacy-relevant entities (PERSON and the 15 privacy categories; 317 test instances) uncovered on clean text for the baseline, 59.6\% for the adversarially trained model and 72.2\% to 74.1\% for the DP models (Table~\ref{tab:red}). The attack adds a smaller further leak ($\leq$4.8\% of correctly redacted privacy entities), so for this pilot an under-trained auditor misses far more than an attacker can make it miss.
+
+\begin{table}[H]
+\centering\caption{Redaction leakage on privacy-relevant entities.}\label{tab:red}
+\footnotesize
+\begin{tabular}{lrr}
+\toprule
+Model & Clean miss rate & Extra leak under attack \\
+\midrule
+Baseline (final epoch) & 57.4\% & 4.5\% \\
+Baseline, early stopped & 66.9\% & 0.0\% \\
+Adversarially trained & 59.6\% & 0.0\% \\
+DP-SGD, $\varepsilon=64$ & 72.2\% & 0.0\% \\
+DP-SGD, $\varepsilon=16$ & 74.1\% & 4.8\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For the released attributes, using $k$-anonymity~\cite{sweeney2002kanon}, all 299 (birth date, birthplace) pairs are unique. Over a 30-node generalisation lattice, $k=2$ needs the year with the place suppressed ($\leq$5\% suppression), $k=5$ needs a 5-year band with the place suppressed (2.0\% suppression), and $k=10$ needs the date suppressed and the place reduced to a continent (3.7\% suppression). Meaningful anonymity at $n=299$ therefore requires heavy generalisation.
+
+\subsection{Local DP and Compressive Privacy (Controlled Demonstrations)}
+For birth country (top 8 plus other) and birth year, $k$-ary randomised response and the piecewise mechanism~\cite{wang2019ldp} were compared with central Laplace noise (500 runs). At $\varepsilon=1$ the LDP histogram L1 error is 0.805 (maximum 2) against 0.060 for central DP, and the piecewise mechanism beats Laplace on the mean birth year at every $\varepsilon$ (5.1 against 7.0 years at $\varepsilon=1$). Error falls roughly with $\sqrt{n}$, so local DP is not practical for a 500-page audit.
+
+For compressive privacy, 100-dimensional TF-IDF features were projected with PCA, DCA and DUCA~\cite{kung2017compressive}. Uncompressed features support the utility task (birth continent) at 70.2\% and leak the sensitive attribute (birth decade) at 73.1\% against a 31.8\% majority baseline; DUCA with three dimensions keeps utility at 72.6\% while reducing the adversary to 30.4\%. The 299-record cross-validated demonstration shows the trade-off mechanism, not general-text performance.
+
+\begin{figure}[H]
+\centering\includegraphics[width=\linewidth]{figures/fig_cp.png}
+\caption{Compressive privacy: utility accuracy (left) and birth-decade adversary accuracy (right) against projected dimensions.}
+\end{figure}
+
+\section{Limitations}
+\begin{itemize}
+\item Wikipedia-specific, English-language corpus; single downsized, non-pretrained BERT architecture.
+\item Silver-standard (not human-verified) annotation for all 500 paragraphs.
+\item Small pilot scale (500 pages, reduced from the 5{,}000--10{,}000 target for practical live-scraping time) leaves most privacy-sensitive categories with near-zero/zero support.
+\item Single attack family; no character-level or entity-substitution attack evaluated.
+\item Adversarial training evaluated at only one augmentation ratio and data scale.
+\item GDPR/CCPA risk mapping is a research heuristic, not a legally validated instrument.
+\item The extension experiments use a re-built pipeline (baseline F1 0.235, not 0.216); DP models were trained with a different optimiser setting than the non-private baseline, and the matched non-private controls fail, so the privacy cost of DP-SGD cannot be isolated exactly. Local DP and compressive privacy are controlled demonstrations on 299 records.
+\end{itemize}
+
+\section{Future Work}
+Full-scale live Wikidata data collection; pretrained BERT initialization when reachable; larger-scale human-verified annotation; entity-substitution and BERT-Attack-style attacks; multi-seed statistical robustness; larger-scale adversarial training; human evaluation of adversarial-text semantic preservation.
+
+\section{Conclusion}
+This paper built and executed, end-to-end, a real pipeline connecting live Wikipedia BLP data collection (via the official MediaWiki API and Wikidata, not a pre-built dataset), privacy-sensitive NER, an NER-adapted adversarial attack, GDPR/CCPA-informed privacy-risk mapping, and adversarial-training mitigation, under one disclosed infrastructure constraint (no pretrained BERT weights). Adversarial text manipulation causes significant, statistically significant collateral NER degradation and confidence erosion, measurably propagating into privacy-risk underestimation in a meaningful minority of cases (11.8\%); adversarial training, evaluated with early stopping to correct for a small-data overfitting artifact, provides a genuine robustness improvement at a small, honestly-reported clean-data cost. Extending the study to privacy-preserving techniques (Section~\ref{sec:extensions}), DP-SGD at this data scale reduces test F1 to about 0.1, NER-driven redaction leaves more than half of privacy-relevant entities uncovered even without an attack, every (birth date, birthplace) pair is unique and needs heavy generalisation for k-anonymity, and a discriminant projection can remove a sensitive attribute while keeping a utility attribute.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

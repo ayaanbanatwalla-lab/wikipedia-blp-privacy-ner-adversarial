@@ -1,0 +1,20 @@
+/usr/local/lib/python3.13/dist-packages/opacus/privacy_engine.py:98: UserWarning: Secure RNG turned off. This is perfectly fine for experimentation as it allows for much faster training performance, but remember to turn it on and retrain one last time before production with ``secure_mode`` turned on.
+  warnings.warn(
+/home/claude/ia2/dp.py:31: UserWarning: Full backward hook is firing when gradients are computed with respect to module outputs since no inputs require gradients. See https://docs.pytorch.org/docs/main/generated/torch.nn.Module.html#torch.nn.Module.register_full_backward_hook for more details.
+  loss = per_sample_loss(logits, b["labels"]).mean(); loss.backward(); opt.step()
+eps_target=64.0 ep1 loss=2.287 valF1=0.0000 eps=16.05 26s
+eps_target=64.0 ep2 loss=1.353 valF1=0.0000 eps=21.62 52s
+eps_target=64.0 ep3 loss=1.264 valF1=0.0000 eps=26.39 75s
+eps_target=64.0 ep4 loss=1.258 valF1=0.0000 eps=30.12 98s
+eps_target=64.0 ep5 loss=1.131 valF1=0.0059 eps=33.86 122s
+eps_target=64.0 ep6 loss=1.062 valF1=0.0965 eps=37.60 145s
+eps_target=64.0 ep7 loss=1.055 valF1=0.1005 eps=40.90 167s
+eps_target=64.0 ep8 loss=1.063 valF1=0.1087 eps=43.78 187s
+eps_target=64.0 ep9 loss=1.021 valF1=0.1103 eps=46.67 207s
+eps_target=64.0 ep10 loss=0.967 valF1=0.1179 eps=49.56 230s
+eps_target=64.0 ep11 loss=0.995 valF1=0.1236 eps=52.44 250s
+eps_target=64.0 ep12 loss=0.985 valF1=0.1156 eps=55.33 273s
+eps_target=64.0 ep13 loss=0.983 valF1=0.1267 eps=58.22 295s
+eps_target=64.0 ep14 loss=0.982 valF1=0.1224 eps=61.11 318s
+eps_target=64.0 ep15 loss=0.947 valF1=0.1231 eps=63.99 341s
+DONE 64.0 0.11428571428571427 {'n': 52, 'flip_rate': 0.0, 'leak_rate_any_type': 0.0, 'avg_conf_drop': 0.04799274921130676, 'avg_mods': 2.576923076923077, 'avg_queries': 41.98076923076923}

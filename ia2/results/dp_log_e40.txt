@@ -1,0 +1,45 @@
+/usr/local/lib/python3.13/dist-packages/opacus/privacy_engine.py:98: UserWarning: Secure RNG turned off. This is perfectly fine for experimentation as it allows for much faster training performance, but remember to turn it on and retrain one last time before production with ``secure_mode`` turned on.
+  warnings.warn(
+/home/claude/ia2/dp.py:34: UserWarning: Full backward hook is firing when gradients are computed with respect to module outputs since no inputs require gradients. See https://docs.pytorch.org/docs/main/generated/torch.nn.Module.html#torch.nn.Module.register_full_backward_hook for more details.
+  loss = per_sample_loss(logits, b["labels"]).mean(); loss.backward(); opt.step()
+eps_target=16.0 ep1 loss=2.579 valF1=0.0000 26s
+eps_target=16.0 ep2 loss=1.511 valF1=0.0000 50s
+eps_target=16.0 ep3 loss=1.342 valF1=0.0000 72s
+eps_target=16.0 ep4 loss=1.309 valF1=0.0000 95s
+eps_target=16.0 ep5 loss=1.205 valF1=0.0000 119s
+eps_target=16.0 ep6 loss=1.147 valF1=0.0000 141s
+eps_target=16.0 ep7 loss=1.156 valF1=0.0031 163s
+eps_target=16.0 ep8 loss=1.166 valF1=0.0058 184s
+eps_target=16.0 ep9 loss=1.124 valF1=0.0576 205s
+eps_target=16.0 ep10 loss=1.075 valF1=0.0910 228s
+eps_target=16.0 ep11 loss=1.100 valF1=0.0987 248s
+eps_target=16.0 ep12 loss=1.095 valF1=0.1003 270s
+eps_target=16.0 ep13 loss=1.091 valF1=0.0967 290s
+eps_target=16.0 ep14 loss=1.094 valF1=0.0916 311s
+eps_target=16.0 ep15 loss=1.066 valF1=0.0949 332s
+eps_target=16.0 ep16 loss=1.061 valF1=0.0915 353s
+eps_target=16.0 ep17 loss=1.067 valF1=0.1025 375s
+eps_target=16.0 ep18 loss=1.051 valF1=0.0922 395s
+eps_target=16.0 ep19 loss=1.056 valF1=0.0902 414s
+eps_target=16.0 ep20 loss=1.057 valF1=0.0909 432s
+eps_target=16.0 ep21 loss=1.060 valF1=0.0867 455s
+eps_target=16.0 ep22 loss=1.053 valF1=0.0781 476s
+eps_target=16.0 ep23 loss=1.036 valF1=0.0946 497s
+eps_target=16.0 ep24 loss=1.057 valF1=0.0903 516s
+eps_target=16.0 ep25 loss=1.059 valF1=0.0931 535s
+eps_target=16.0 ep26 loss=1.045 valF1=0.0960 554s
+eps_target=16.0 ep27 loss=1.042 valF1=0.0847 573s
+eps_target=16.0 ep28 loss=1.048 valF1=0.0950 595s
+eps_target=16.0 ep29 loss=1.060 valF1=0.1152 615s
+eps_target=16.0 ep30 loss=1.034 valF1=0.0899 636s
+eps_target=16.0 ep31 loss=1.062 valF1=0.0964 657s
+eps_target=16.0 ep32 loss=1.045 valF1=0.1076 678s
+eps_target=16.0 ep33 loss=1.055 valF1=0.1066 700s
+eps_target=16.0 ep34 loss=1.061 valF1=0.0852 720s
+eps_target=16.0 ep35 loss=1.070 valF1=0.1080 741s
+eps_target=16.0 ep36 loss=1.049 valF1=0.0770 763s
+eps_target=16.0 ep37 loss=1.041 valF1=0.0697 783s
+eps_target=16.0 ep38 loss=1.021 valF1=0.1104 803s
+eps_target=16.0 ep39 loss=1.083 valF1=0.0772 821s
+eps_target=16.0 ep40 loss=1.045 valF1=0.0924 840s
+DONE 16.0 0.07582938388625593 {'n': 32, 'flip_rate': 0.0, 'leak_rate_any_type': 0.03125, 'avg_conf_drop': 0.02716953121125698, 'avg_mods': 2.5, 'avg_queries': 40.84375}

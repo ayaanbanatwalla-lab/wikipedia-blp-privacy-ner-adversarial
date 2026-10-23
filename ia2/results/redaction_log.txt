@@ -1,0 +1,5 @@
+ia2_baseline {'n': 239, 'flip_rate': 0.029288702928870293, 'extra_leak_rate': 0.04602510460251046, 'avg_conf_drop': 0.4499317300503348} {'n': 66, 'flip_rate': 0.030303030303030304, 'extra_leak_rate': 0.045454545454545456, 'avg_conf_drop': 0.2962914256747877}
+ia2_baseline_es {'n': 189, 'flip_rate': 0.042328042328042326, 'extra_leak_rate': 0.037037037037037035, 'avg_conf_drop': 0.23884723122538407} {'n': 61, 'flip_rate': 0.01639344262295082, 'extra_leak_rate': 0.0, 'avg_conf_drop': 0.09779532984296074}
+ia2_adv_trained {'n': 225, 'flip_rate': 0.02666666666666667, 'extra_leak_rate': 0.022222222222222223, 'avg_conf_drop': 0.3156006835174695} {'n': 69, 'flip_rate': 0.0, 'extra_leak_rate': 0.0, 'avg_conf_drop': 0.2196709824645001}
+ia2_dp_eps16 {'n': 42, 'flip_rate': 0.0, 'extra_leak_rate': 0.047619047619047616, 'avg_conf_drop': 0.008517012510093906} {'n': 42, 'flip_rate': 0.0, 'extra_leak_rate': 0.047619047619047616, 'avg_conf_drop': 0.008517012510093906}
+ia2_dp_eps64 {'n': 52, 'flip_rate': 0.0, 'extra_leak_rate': 0.0, 'avg_conf_drop': 0.04834428135878765} {'n': 52, 'flip_rate': 0.0, 'extra_leak_rate': 0.0, 'avg_conf_drop': 0.04834428135878765}

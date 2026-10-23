@@ -1,0 +1,27 @@
+import matplotlib; matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
+fig, ax = plt.subplots(figsize=(9.6, 5.4)); ax.set_xlim(0, 100); ax.set_ylim(0, 60); ax.axis("off")
+def box(x, y, w, h, t, fc="#ffffff", ec="#222", fs=7.6, bold=False):
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.25,rounding_size=1.2", fc=fc, ec=ec, lw=1.0))
+    ax.text(x+w/2, y+h/2, t, ha="center", va="center", fontsize=fs, fontweight="bold" if bold else "normal", family="serif", linespacing=1.25)
+def arr(x1, y1, x2, y2, c="#222"): ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="-|>", mutation_scale=9, lw=1.0, color=c))
+G, B, R, Y, P = "#e8f1e4", "#e3edf7", "#f9e4e0", "#fbf3d9", "#ece6f3"
+box(1, 44, 17, 12, "Live Wikipedia + Wikidata\nscraper (500 BLPs)\nraw_blp_data.jsonl", G)
+box(22, 44, 17, 12, "Clean, silver-annotate,\n19 entity types\n70/15/15 split", G)
+box(43, 44, 17, 12, "Privacy NER\n(BERT-arch, 6.27M)\nbaseline", B, bold=True)
+box(64, 44, 17, 12, "M1: black-box context\nattack (synonym swap)\nM1: adversarial training", R)
+box(85, 44, 14, 12, "M1: GDPR/CCPA\nrisk scoring", Y)
+for a, b in ((18, 22), (39, 43), (60, 64), (81, 85)): arr(a, 50, b, 50)
+box(22, 24, 17, 12, "M4: k-anonymity on\n(birth date, birth place)\ngeneralisation lattice", Y, bold=True)
+box(43, 24, 17, 12, "M2: DP-SGD (Opacus)\nε sweep: utility and\nrobustness", B, bold=True)
+box(64, 24, 17, 12, "M4: NER-driven redaction\nleakage under attack\n(all defended models)", R, bold=True)
+arr(30.5, 44, 30.5, 36); arr(51.5, 44, 51.5, 36); arr(72.5, 44, 72.5, 36)
+arr(81, 30, 85, 30, "#888"); box(85, 24, 14, 12, "Risk mapping\nof leaked\nentities", Y)
+ax.add_patch(FancyBboxPatch((20, 2), 62, 15, boxstyle="round,pad=0.2,rounding_size=1.0", fc="none", ec="#777", lw=0.9, ls="--"))
+box(22, 4, 18, 11, "M3: local DP demo\nrandomised response,\npiecewise mechanism", P)
+box(43, 4, 18, 11, "M5: compressive privacy\nPCA vs DCA vs DUCA\nutility / leak trade-off", P)
+box(64, 4, 16, 11, "Both demos use the\n299 BLP records with\nbirth date + birth place", "#ffffff", fs=7)
+ax.text(1, 30, "Full experiments", fontsize=8, family="serif", style="italic"); ax.text(1, 9.5, "Controlled demos", fontsize=8, family="serif", style="italic")
+ax.text(50, 58.5, "IA-2 workflow and module integration (green: data, blue: model, red: attack/defence, yellow: risk/anonymity, purple: demos)", ha="center", fontsize=8, family="serif")
+fig.tight_layout(); fig.savefig("figures/fig_workflow.png", dpi=250)
